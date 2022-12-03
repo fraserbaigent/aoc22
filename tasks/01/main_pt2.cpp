@@ -4,8 +4,46 @@
 #include <algorithm>
 #include <numeric>
 
+class TopValues {
+public:
+    TopValues() :
+	values_{std::vector<int>{ELF_COUNT,0}}
+    {
+    }
+    
+    void addValueIfTop(const int total) {
+	int index = -1;
+	for (int i = 0; i < (int)values_.size(); ++i) {
+	    if (total < values_[i]) {
+		break;
+	    } else {
+		index = i;
+	    }
+	}
+	int insert_index = index;
+	while (index > 0) {
+	    values_[index-1] = values_[index];
+	    index--;
+	}
+	
+	if (insert_index >= 0) {
+	    values_[insert_index] = total;
+	}	
+    }
+
+    void printTotalValue() {
+	std::cout <<
+	    "Max calories: " <<
+	    std::accumulate(values_.begin(), values_.end(), 0) <<
+	    "\n";
+    }
+private:
+    static constexpr int ELF_COUNT = 3;
+    std::vector<int> values_;
+};
+
 int main() {
-    std::vector<int> totals;
+    TopValues top_vals;
     int total = 0;
     std::ifstream infile = std::ifstream("data.dat");
     std::string line;
@@ -16,23 +54,12 @@ int main() {
 	    int val = std::stoi(line);
 	    total += val;
 	} else {
-	    totals.push_back(total);
+	    top_vals.addValueIfTop(total);
 	    total = 0;
 	}
     }
-    if (total != 0) {
-	totals.push_back(total);
-    }
     
-    if (totals.size() > 3) {
-	std::partial_sort(totals.begin(),
-			  totals.begin() + 3,
-			  totals.end(),
-			  [] (auto &l, auto &r) {
-			      return l > r;
-			  });
-    }
-    
-    std::cout << "\nMax calories:" << std::accumulate(totals.begin(), totals.begin() + 3, 0) << "\n";
+    top_vals.addValueIfTop(total);
+    top_vals.printTotalValue();
     return 0;
 }
