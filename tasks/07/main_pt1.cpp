@@ -74,17 +74,34 @@ protected:
 	}
     }
 
+    int getRequiredSpaceForUpdate() const {
+	int amount_used = _directories.find("/")->second->getTotalSize();
+	static constexpr int TOTAL_REQUIRED = 30000000;
+	static constexpr int TOTAL_AVAILABLE = 70000000 ;
+	return std::max(TOTAL_REQUIRED - (TOTAL_AVAILABLE - amount_used), 0);
+    }
+    
     void printResult() const {
 	int total = 0;
+	int lowest = -1;
+	int required_removal = getRequiredSpaceForUpdate();
 	static constexpr int max_size_cutoff = 100000;
 	std::cout << "Summary of directories:\n";
 	for (auto &d : _directories) {
 	    std::cout << d.first << " - " << d.second->getTotalSize() << "\n";
-	    if (d.second->getTotalSize() < max_size_cutoff) {
-		total += d.second->getTotalSize();
+	    int total_size = d.second->getTotalSize();
+	    if (total_size < max_size_cutoff) {
+		total += total_size;
 	    }
+	    if ((total_size > required_removal) &&
+		(lowest <= 0 || 
+		 lowest > total_size)) {
+		lowest = total_size;
+	    }
+	    
 	}
-	std::cout << "Answer : " << total <<"\n";
+	std::cout << "Part 1: " << total <<"\n";
+	std::cout << "Part 2: " << lowest <<"\n";
     }
 
     std::shared_ptr<Command> parseCommand(std::string const& line) {
