@@ -1,4 +1,5 @@
 #include <iostream>
+#include <set>
 #include "../../lib/file_reader.hpp"
 #include "monkey.hpp"
 
@@ -15,19 +16,29 @@ std::vector<std::string> getMonkeyStrings(FileReader & reader) {
     return strings;
 }
 
-void playCatch(std::vector<Monkey> &monkeys, int number_of_rounds) {
-    for (int i = 0; i < number_of_rounds;++i) {
+void initialiseCommonModulo(std::vector<Monkey> &monkeys) {
+    ulong divisor_product { 1 };
+    for (auto & monkey : monkeys) {
+	divisor_product *= monkey.getDivisor();
+    }
+    for (auto & monkey : monkeys) {
+	monkey.setModulo(divisor_product);
+    }
+}    
+
+void playCatch(std::vector<Monkey> &monkeys, ulong number_of_rounds) {    
+    for (ulong i = 0; i < number_of_rounds;++i) {
 	for (auto & monkey : monkeys) {
 	    while (monkey.hasItems()) {
-		int to_pass = monkey.getMonkeyToPass();
-		int item = monkey.throwItem();
+		auto to_pass = monkey.getMonkeyToPass(false);
+		auto item = monkey.throwItem();
 		monkeys[to_pass].receiveItem(item);
 	    }
 	}
     }
 }
 
-long int getMonkeyBusiness(std::vector<Monkey> & monkeys) {
+ulong getMonkeyBusiness(std::vector<Monkey> & monkeys) {
     std::sort(monkeys.begin(),
 	      monkeys.end(),
 	      [&](auto & l, auto & r) {
@@ -43,16 +54,17 @@ long int getMonkeyBusiness(std::vector<Monkey> & monkeys) {
 
 int main()
 {
-    auto reader = FileReader("test_data.dat");
+    auto reader = FileReader("data.dat");
 
     std::vector<Monkey> monkeys;
     while (reader.good()) {
 	std::vector<std::string> monkey_strings = getMonkeyStrings(reader);
 	monkeys.push_back(Monkey(monkey_strings));
     }
-    static constexpr int number_of_rounds = 20;
+    static constexpr ulong number_of_rounds = 10000;
+    initialiseCommonModulo(monkeys);
     playCatch(monkeys, number_of_rounds);
-    long int business = getMonkeyBusiness(monkeys);
+    ulong business = getMonkeyBusiness(monkeys);
     std::cout << "Answer: " << business <<"\n";
     
     return 0;

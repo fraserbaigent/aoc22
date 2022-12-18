@@ -4,6 +4,9 @@
 #include <regex>
 #include <iostream>
 
+
+using ulong = std::uint64_t;
+
 class Monkey {
 private:
     enum CallbackType {
@@ -11,14 +14,15 @@ private:
 	MULTIPLY,
 	SQUARE,
     };
-    std::queue<int> _items;
-    int _divisor { 0 };
-    int _true_monkey { 0 };
-    int _false_monkey { 0 };
-    int _number { 0 };
-    int _inspection_count { 0 };
-    int _callback_type { 0 };
-    int _callback_value { 0 };
+    std::queue<ulong> _items;
+    ulong _divisor { 0 };
+    ulong _true_monkey { 0 };
+    ulong _false_monkey { 0 };
+    ulong _number { 0 };
+    ulong _inspection_count { 0 };
+    ulong _callback_type { 0 };
+    ulong _callback_value { 0 };
+    ulong _modulo { 1 };
 public:
     Monkey(std::vector<std::string> const& config) {
 	getMonkeyNumber(config[0]);
@@ -29,12 +33,12 @@ public:
 	_false_monkey = getResultMonkey(config[5]);
     }
 
-    void receiveItem(int item) {
+    void receiveItem(ulong item) {
 	_items.emplace(item);
     }
 
-    int throwItem() {
-	int item = _items.front();
+    ulong throwItem() {
+	auto item = _items.front();
 	_items.pop();
 	return item;
     }
@@ -43,21 +47,34 @@ public:
 	return !_items.empty();
     }
     
-    int getMonkeyToPass() {
-	int &item = _items.front();
+    ulong getMonkeyToPass(bool divide_number = true) {
+	auto &item = _items.front();
 	doCallback(item);
-	item /= 3;
+	if (divide_number) {
+	    item /= 3;
+	} else {
+	    item %= _modulo;
+	}
 	_inspection_count++;
 	return getMonkeyToPassTo(item);
     }
 
-    int getNumber() const {
+    ulong getNumber() const {
 	return _number;
     }
     
-    int getInspectionCount() const {
+    ulong getInspectionCount() const {
 	return _inspection_count;
     }
+
+    ulong getDivisor() const {
+	return _divisor;
+    }
+
+    void setModulo(ulong modulo) {
+	_modulo = modulo;
+    }
+
 private:
     void getMonkeyNumber(std::string const& str) {
 	std::regex re("^Monkey (\\d+)\\:$");
@@ -105,19 +122,19 @@ private:
 	_divisor = std::stoi(sm[1]);
     }
 
-    int getResultMonkey(std::string const& str) {
+    ulong getResultMonkey(std::string const& str) {
 	std::regex re(".*If \\w+: throw to monkey (\\d+)$");
 	std::smatch sm;
 	std::regex_match(str, sm, re);
 	return std::stoi(sm[1]);
     }
     
-    int getMonkeyToPassTo(int const& worry_level) {
-	int result =  (worry_level % _divisor) == 0 ? _true_monkey : _false_monkey;
+    ulong getMonkeyToPassTo(ulong const& worry_level) {
+	ulong result =  (worry_level % _divisor) == 0 ? _true_monkey : _false_monkey;
 	return result;
     }
 
-    void doCallback(int & worry_level) {
+    void doCallback(ulong & worry_level) {
 	switch (_callback_type) {
 	case ADD:
 	    worry_level += _callback_value;
@@ -130,4 +147,5 @@ private:
 	    break;
 	}
     }
+
 };
