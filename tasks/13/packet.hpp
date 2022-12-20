@@ -8,6 +8,7 @@ class Packet {
 private:
     std::vector<Packet> _sub_values;
     int _value { -1 };
+    bool _divider { false };
 public:
     Packet() {
     }
@@ -50,6 +51,14 @@ public:
 
     bool isEmptyList() const {
 	return _value < 0 && _sub_values.empty();
+    }
+
+    void setDivider() {
+	_divider = true;
+    }
+
+    bool isDivider() const {
+	return _divider;
     }
 };
 #endif

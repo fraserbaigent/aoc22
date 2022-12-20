@@ -1,10 +1,12 @@
 #ifndef SOLVER_HPP
 #define SOLVER_HPP
 
+#include <iomanip>
 #include "../../lib/file_reader.hpp"
 #include <vector>
 #include <string>
 #include "packet.hpp"
+#include <algorithm>
 
 namespace Solver {
 enum Comparisons {
@@ -55,8 +57,11 @@ std::vector<int> getValuesFromCommaListString(std::string const& values) {
     return result;
 }
 
-Packet getPacket(std::string const& line) {
+    Packet getPacket(std::string const& line, bool is_divider = false) {
     Packet root;
+    if (is_divider) {
+	root.setDivider();
+    }
     
     auto index { 0 };
     while (index < line.size()) {
@@ -88,6 +93,13 @@ Packet getPacket(std::string const& line) {
 }
 
 int inCorrectOrder(Packet const& left, Packet const& right) {
+
+    //std::cout << "Comparing:\n";
+    //left.printValue();
+    //std::cout << std::endl;
+    //right.printValue();
+    //std::cout << std::endl;
+	
     if (left.isEmptyList() && !right.isEmptyList()) {
 	return TRUE;
     } else if (right.isEmptyList() && !left.isEmptyList()) {
@@ -107,7 +119,8 @@ int inCorrectOrder(Packet const& left, Packet const& right) {
 		return result;
 	    }
 	}
-	return left.size() <= right.size() ? TRUE : FALSE;
+	return left.size() == right.size() ? EQUAL :
+	    left.size() < right.size() ? TRUE : FALSE;
     } else if (left.size() == 0) {
 	Packet wrapper;
 	wrapper.addValue(left);
@@ -119,9 +132,8 @@ int inCorrectOrder(Packet const& left, Packet const& right) {
     }
     return FALSE;
 }
-
 bool inCorrectOrder(std::string const& packet_l,
-		    std::string const& packet_r) {
+                  std::string const& packet_r) {
     auto packet_1 = getPacket(packet_l.substr(1, packet_l.size() - 2));
     auto packet_2 = getPacket(packet_r.substr(1, packet_r.size() - 2));
     
@@ -146,6 +158,51 @@ int solveMain(std::string const& file_name) {
     }
     return answer;
 }
+
+void printResult(std::vector<Packet> const& packets) {
+    int i { 0 };
+    for (auto &p : packets) {
+	std::cout << std::setw(3) << ++i << " | ";
+	p.printValue();
+	if (p.isDivider()) {
+	    std::cout << "<-------------------------- DIVIDER";
+	}
+	std::cout << std::endl;
+    }
+}
+    
+int solveMain2(std::string const& file_name) {
+    auto reader = FileReader(file_name);
+    std::vector<Packet> packets { getPacket("[[2]]", true), getPacket("[[6]]", true)};
+    while (reader.good()) {
+	auto line = reader.nextLine();
+	if (line.empty()) {
+	    continue;
+	}
+	packets.push_back(getPacket(line.substr(1, line.size() - 2)));
+    }
+    std::sort(packets.begin(),
+	      packets.end(),
+	      [](auto const& l, auto const& r) {
+		  return !inCorrectOrder(l, r);
+	      });
+    auto first = std::find_if(packets.begin(),
+			      packets.end(),
+			      [](auto const& p) {
+				  return p.isDivider();
+			      });
+    auto second = std::find_if(first + 1,
+			      packets.end(),
+			      [](auto const& p) {
+				  return p.isDivider();
+			      });
+    printResult(packets);
+    
+    return
+	(std::distance(packets.begin(), first) + 1) *
+	(std::distance(packets.begin(), second) + 1);
+}
+    
 };
 
 #endif
